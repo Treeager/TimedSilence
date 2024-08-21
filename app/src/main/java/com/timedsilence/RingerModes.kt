@@ -16,21 +16,10 @@ fun setRingerMode(context: Context, mode: Int) {
 
 @SuppressLint("ServiceCast")
 fun setSilentMode(context: Context) {
-//    setRingerMode(context, AudioManager.RINGER_MODE_SILENT)
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (notificationManager.isNotificationPolicyAccessGranted) {
-            audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
-            audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-        } else {
-            // Request permission from the user to access DND
-            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-        }
-    } else {
-        audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-    }
+    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
 }
 
 fun setVibrateMode(context: Context) {
@@ -50,9 +39,18 @@ class RingerModeReceiver : BroadcastReceiver() {
 
         // Get the AudioManager service to change the ringer mode.
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // Request permission from the user to access DND if it is not granted
+        if (! notificationManager.isNotificationPolicyAccessGranted ) {
+            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+        }
 
         // Set the ringer mode to the desired mode (Silent, Vibrate, or Normal).
         mode?.let {
+
+
+            audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL // If this isn't here sometimes doesn't switch  from vibration to silent
             audioManager.ringerMode = it
         }
     }

@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        checkAndRequestExactAlarmPermission(this)
+        checkAndRequestExactAlarmPermission(this) // TODO: Dialog about permissions
         setContent {
             AppTheme {
                 MainComposable(AlarmViewModel())
@@ -147,7 +147,7 @@ fun Dialer(
 
                         Icon(
                            icon,
-                            contentDescription = "aijd"
+                            contentDescription = "Switch time input methods"
                         )
                     }
                     Row (horizontalArrangement = Arrangement.SpaceBetween) {
@@ -247,7 +247,7 @@ fun TopAndBottomBars (onClicked: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetMode(viewModel: AlarmViewModel,) {
+fun SetMode(viewModel: AlarmViewModel) {
     var selectedIndex by remember { mutableStateOf(0)}
     var mode by remember { mutableStateOf(2) }
     val options = listOf("Normal", "Vibrate", "Silent")
@@ -289,10 +289,10 @@ fun MainComposable (viewModel: AlarmViewModel) {
     if (selectedTime != null) {
         hours = selectedTime?.hour.toString()
 
-        if (selectedTime?.minute != 0) {
-            minutes = selectedTime?.minute.toString()
+        minutes = if (selectedTime?.minute != 0) {
+            selectedTime?.minute.toString()
         } else {
-            minutes = "00"
+            "00"
         }
 
 //        if (minutes.length == 1) {
@@ -302,7 +302,7 @@ fun MainComposable (viewModel: AlarmViewModel) {
     }
 
 
-    TopAndBottomBars() {
+    TopAndBottomBars {
 //        viewModel.scheduleWork(context, time)
         scheduleRingerModeChange(context, mode, hours.toInt(), minutes.toInt())
         log("$mode, ${hours.toInt()}, ${minutes.toInt()}")
