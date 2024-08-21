@@ -7,12 +7,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,7 +43,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -59,16 +52,13 @@ import androidx.compose.material3.TimePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -83,9 +73,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        checkAndRequestExactAlarmPermission(this)
         setContent {
             AppTheme {
-                MainComposable(MyViewModel())
+                MainComposable(AlarmViewModel())
             }
         }
     }
@@ -100,7 +91,7 @@ fun log(msg: String = "Here", tag: String = "ok") {
 @Composable
 fun MainPreview() {
     AppTheme {
-        MainComposable(MyViewModel())
+        MainComposable(AlarmViewModel())
     }
 }
 
@@ -114,10 +105,12 @@ fun Dialer(
     val showingPicker = remember { mutableStateOf(true) }
 
     val timePickerState = rememberTimePickerState(
-//        initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
-//        initialMinute = currentTime.get(Calendar.MINUTE),
+        initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
+        initialMinute = currentTime.get(Calendar.MINUTE),
         is24Hour = true
     )
+
+
 
     Dialog(onDismissRequest = onDismiss ) {
         Card(
@@ -157,7 +150,6 @@ fun Dialer(
                             contentDescription = "aijd"
                         )
                     }
-//                    Spacer(modifier = Modifier.fillMaxSize(0.1f))
                     Row (horizontalArrangement = Arrangement.SpaceBetween) {
                         TextButton(
                             onClick = onDismiss,
@@ -180,7 +172,6 @@ fun Dialer(
 @Composable
 fun TopAndBottomBars (onClicked: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
-//    val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
     Scaffold (
 /*        topBar = {
@@ -242,7 +233,6 @@ fun TopAndBottomBars (onClicked: () -> Unit) {
                 ) {
 
                 Column (
-//                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(start = 80.dp)
@@ -257,13 +247,9 @@ fun TopAndBottomBars (onClicked: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetMode(viewModel: MyViewModel, reset: @Composable () -> Unit ) {
-    val shouldActivate by viewModel.shouldActivate.collectAsState()
-
-    val context = LocalContext.current
-
-
+fun SetMode(viewModel: AlarmViewModel,) {
     var selectedIndex by remember { mutableStateOf(0)}
+    var mode by remember { mutableStateOf(2) }
     val options = listOf("Normal", "Vibrate", "Silent")
 
     SingleChoiceSegmentedButtonRow {
@@ -272,6 +258,13 @@ fun SetMode(viewModel: MyViewModel, reset: @Composable () -> Unit ) {
                 selected = index == selectedIndex,
                 onClick = {
                     selectedIndex = index
+
+                    when(selectedIndex) {
+                        0 -> mode = 2
+                        2 -> mode = 0
+                    }
+
+                    viewModel.changeMode(mode)
                 },
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size)
             ) {
@@ -279,31 +272,18 @@ fun SetMode(viewModel: MyViewModel, reset: @Composable () -> Unit ) {
             }
         }
     }
-
-    if(shouldActivate) {
-        when (selectedIndex) {
-            0 -> setNormalMode(context)
-            1 -> setVibrateMode(context)
-            2 -> setSilentMode(context)
-        }
-
-        // Reset the state
-        reset()
-    }
 }
-
-val MyClass: MyViewModel = MyViewModel()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainComposable (viewModel: MyViewModel) {
+fun MainComposable (viewModel: AlarmViewModel) {
     val context = LocalContext.current
-
+    val mode by viewModel.mode.collectAsState()
     log("Main called")
 
     var showDialer by remember { mutableStateOf(false) }
     var selectedTime: TimePickerState? by remember { mutableStateOf(null) }
-    var hours by remember { mutableStateOf("0") }
+    var hours by remember { mutableStateOf("00") }
     var minutes by remember { mutableStateOf("00") }
 
     if (selectedTime != null) {
@@ -315,16 +295,17 @@ fun MainComposable (viewModel: MyViewModel) {
             minutes = "00"
         }
 
-        if (minutes.length == 1) {
-            minutes = "0$minutes"
-        }
+//        if (minutes.length == 1) {
+//            minutes = "0$minutes"
+//        }
 
     }
-    var time = hours.toLong()*60 + minutes.toLong()
 
 
     TopAndBottomBars() {
-        viewModel.scheduleWork(context, time)
+//        viewModel.scheduleWork(context, time)
+        scheduleRingerModeChange(context, mode, hours.toInt(), minutes.toInt())
+        log("$mode, ${hours.toInt()}, ${minutes.toInt()}")
     }
 
     Box(
@@ -353,12 +334,8 @@ fun MainComposable (viewModel: MyViewModel) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-
-//            viewModel.timerMinutes = ( hours.toLong() * 60 ) + minutes.toLong()
-
             Text(
-                text = " ${hours}h : ${minutes}m",
+                text = " ${if (hours.length==1) "0$hours" else hours }:${if (minutes.length==1) "0$minutes" else minutes}",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 50.sp,
                 textAlign = TextAlign.Center,
@@ -368,11 +345,7 @@ fun MainComposable (viewModel: MyViewModel) {
             )
 
             // Segmented buttons and mode logic
-            SetMode(viewModel) {
-                LaunchedEffect(Unit) {
-                    viewModel.resetActivationState()
-                }
-            }
+            SetMode(viewModel)
 
 
             Button(onClick = {
@@ -382,12 +355,12 @@ fun MainComposable (viewModel: MyViewModel) {
             }
         }
 
-        AnimatedVisibility(
-            visible = showDialer,
-            enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)),
-            exit = fadeOut()
-        ) {
-//        if (showDialer) {
+//        AnimatedVisibility(
+//            visible = showDialer,
+//            enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)),
+//            exit = fadeOut()
+//        ) {
+        if (showDialer) {
             Dialer(
                 onDismiss = { showDialer = false },
                 onConfirm = { time ->
@@ -396,5 +369,6 @@ fun MainComposable (viewModel: MyViewModel) {
                 }
             )
         }
+
     }
 }
