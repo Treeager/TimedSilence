@@ -261,6 +261,7 @@ fun SetMode(viewModel: AlarmViewModel) {
 
                     when(selectedIndex) {
                         0 -> mode = 2
+                        1 -> mode = 1
                         2 -> mode = 0
                     }
 
