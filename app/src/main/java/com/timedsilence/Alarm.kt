@@ -62,17 +62,15 @@ fun scheduleRingerModeChange(context: Context, mode: Int, hour: Int, minute: Int
     alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
 }
 
-fun checkAndRequestExactAlarmPermission(@SuppressLint("RestrictedApi") activity: ComponentActivity) {
+fun checkAndRequestExactAlarmPermission(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val alarmManager = activity.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        if (!alarmManager.canScheduleExactAlarms()) {
+        if (! alarmManager.canScheduleExactAlarms()) {
             // Prompt the user to grant the permission
-            val intent = Intent().apply {
-                action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                data = Uri.parse("package:${activity.packageName}")
-            }
-            activity.startActivity(intent)
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            context.startActivity(intent)
         }
     }
 }

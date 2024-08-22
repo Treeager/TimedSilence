@@ -20,6 +20,8 @@ fun setSilentMode(context: Context) {
 
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+    setRingerMode(context, AudioManager.RINGER_MODE_NORMAL)
+    setRingerMode(context, AudioManager.RINGER_MODE_SILENT)
 }
 
 fun setVibrateMode(context: Context) {
@@ -39,12 +41,7 @@ class RingerModeReceiver : BroadcastReceiver() {
 
         // Get the AudioManager service to change the ringer mode.
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Request permission from the user to access DND if it is not granted
-        if (! notificationManager.isNotificationPolicyAccessGranted ) {
-            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-        }
 
         // Set the ringer mode to the desired mode (Silent, Vibrate, or Normal).
         mode?.let {
@@ -54,4 +51,18 @@ class RingerModeReceiver : BroadcastReceiver() {
             audioManager.ringerMode = it
         }
     }
+}
+
+fun checkAndRequestDndPermission(context: Context ) {
+    // Request permission from the user to access DND if it is not granted
+    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    // Check if the DND access is granted
+    if (!notificationManager.isNotificationPolicyAccessGranted) {
+        // If not granted, prompt the user to grant DND access
+        val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        context.startActivity(intent)
+    }
+
 }

@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         checkAndRequestExactAlarmPermission(this) // TODO: Dialog about permissions
+        checkAndRequestDndPermission(this)
         setContent {
             AppTheme {
                 MainComposable(AlarmViewModel())
