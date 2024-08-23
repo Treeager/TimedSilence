@@ -24,6 +24,12 @@ class RingerModeReceiver : BroadcastReceiver() {
         // Get the AudioManager service to change the ringer mode.
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
+        makeToast(context, text = "Your phone is now in ${when(mode) {
+            0 -> "silent"
+            1 -> "vibration"
+            2 -> "normal"
+            else -> "this should NEVER show"
+        }} mode")
 
         // Set the ringer mode to the desired mode (Silent, Vibrate, or Normal).
         mode?.let {

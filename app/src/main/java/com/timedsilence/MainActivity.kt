@@ -1,8 +1,11 @@
 package com.timedsilence
 
+import android.content.Context
+import android.content.res.Resources
 import android.icu.util.Calendar
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -168,6 +171,7 @@ fun Dialer(
     }
 }
 
+fun makeToast(context: Context, text: String, duration: Int = Toast.LENGTH_SHORT) = Toast.makeText(context, text, duration).show()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -329,20 +333,19 @@ fun MainComposable (viewModel: AlarmViewModel) {
                     }
                 )
             }
+        }
 
-            if (showBottomSheet) {
-                ModalBottomSheet( // TODO: Add some options
-                    onDismissRequest = { showBottomSheet = false },
-                    sheetState = sheetState
+        if (showBottomSheet) {
+            ModalBottomSheet( // TODO: Add some options
+                onDismissRequest = { showBottomSheet = false },
+                sheetState = sheetState
+            ) {
+                Column (
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 80.dp)
                 ) {
-
-                    Column (
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(start = 80.dp)
-                    ) {
-                        Text("Text")
-                    }
+                    Text("Text")
                 }
             }
         }
