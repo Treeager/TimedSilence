@@ -1,6 +1,5 @@
 package com.timedsilence
 
-import android.annotation.SuppressLint
 import android.icu.util.Calendar
 import android.os.Bundle
 import android.util.Log
@@ -169,83 +168,6 @@ fun Dialer(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@Composable
-fun TopAndBottomBars (onClicked: () -> Unit) {
-    val sheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
-    Scaffold (
-/*        topBar = {
-            Box {
-                CenterAlignedTopAppBar(
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-//                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-//                        titleContentColor = MaterialTheme.colorScheme.primary
-                    ),
-                    title = { Text("Timed Silence") })
-            }
-        },*/
-
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onClicked,
-                containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
-                modifier = Modifier
-                    .size(70.dp)
-                    .offset(y = 70.dp)
-
-            ) {
-                Icon(
-                    Icons.Filled.PlayArrow,
-                    contentDescription = "Start",
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-        },
-        floatingActionButtonPosition = FabPosition.Center,
-
-        bottomBar = {
-            BottomAppBar (
-                modifier = Modifier.offset(y = 15.dp),
-                actions = {
-                    IconButton(
-                        onClick = {
-                            showBottomSheet = true
-                        }
-                    ) {
-                        Icon(
-                            Icons.Filled.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                }
-            )
-        }
-    ) {
-        if (showBottomSheet) {
-            ModalBottomSheet( // TODO: Add some options
-                onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState,
-                modifier = Modifier
-                    .height(300.dp)
-                ) {
-
-                Column (
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 80.dp)
-                ) {
-                    Text("Text")
-                }
-            }
-        }
-    }
-}
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -284,6 +206,7 @@ fun MainComposable (viewModel: AlarmViewModel) {
     val mode by viewModel.mode.collectAsState()
     log("Main called")
 
+    // Time things
     var showDialer by remember { mutableStateOf(false) }
     var selectedTime: TimePickerState? by remember { mutableStateOf(null) }
     var hours by remember { mutableStateOf("00") }
@@ -304,74 +227,124 @@ fun MainComposable (viewModel: AlarmViewModel) {
 
     }
 
+    // Sheet sht
+    val sheetState = rememberModalBottomSheetState()
+    var showBottomSheet by remember { mutableStateOf(false) }
 
-    TopAndBottomBars {
-//        viewModel.scheduleWork(context, time)
-        scheduleRingerModeChange(context, mode, hours.toInt(), minutes.toInt())
-        log("$mode, ${hours.toInt()}, ${minutes.toInt()}")
-    }
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 65.dp)
-    ) {
-        Text(text = "Timed Silence",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(vertical = 5.dp)
-        )
-    }
-
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxHeight()
-//            .width(IntrinsicSize.Min)
-
-    )  {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = " ${if (hours.length==1) "0$hours" else hours }:${if (minutes.length==1) "0$minutes" else minutes}",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 50.sp,
-                textAlign = TextAlign.Center,
+    Scaffold (
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { // TODO: Change button and add toast after click
+                    scheduleRingerModeChange(context, mode, hours.toInt(), minutes.toInt())
+                },
+                containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                 modifier = Modifier
-                    .padding(all = 10.dp)
-                    .fillMaxWidth()
-            )
+                    .size(70.dp)
+                    .offset(y = 70.dp)
 
-            // Segmented buttons and mode logic
-            SetMode(viewModel)
-
-
-            Button(onClick = {
-                showDialer = true
-            }) {
-                Text("Select time")
+            ) {
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = "Start",
+                    modifier = Modifier.size(30.dp)
+                )
             }
-        }
 
-//        AnimatedVisibility(
-//            visible = showDialer,
-//            enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessLow)),
-//            exit = fadeOut()
-//        ) {
-        if (showDialer) {
-            Dialer(
-                onDismiss = { showDialer = false },
-                onConfirm = { time ->
-                    selectedTime = time
-                    showDialer = false
+        },
+        floatingActionButtonPosition = FabPosition.Center,
+
+        bottomBar = {
+            BottomAppBar (
+                modifier = Modifier.offset(y = 15.dp),
+                actions = {
+                    IconButton(
+                        onClick = {
+                            showBottomSheet = true
+                        }
+                    ) {
+                        Icon(
+                            Icons.Filled.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
                 }
             )
         }
+    ) { padding ->
 
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 65.dp)
+        ) {
+            Text(text = "Timed Silence",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(vertical = 5.dp)
+            )
+        }
+
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxHeight()
+        )  {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = " ${if (hours.length==1) "0$hours" else hours }:${if (minutes.length==1) "0$minutes" else minutes}",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 50.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(all = 10.dp)
+                        .fillMaxWidth()
+                )
+
+                // Segmented buttons and mode logic
+                SetMode(viewModel)
+
+
+                Button(onClick = {
+                    showDialer = true
+                }) {
+                    Text("Select time")
+                }
+            }
+
+
+            if (showDialer) {
+                Dialer(
+                    onDismiss = { showDialer = false },
+                    onConfirm = { time ->
+                        selectedTime = time
+                        showDialer = false
+                    }
+                )
+            }
+
+            if (showBottomSheet) {
+                ModalBottomSheet( // TODO: Add some options
+                    onDismissRequest = { showBottomSheet = false },
+                    sheetState = sheetState
+                ) {
+
+                    Column (
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = 80.dp)
+                    ) {
+                        Text("Text")
+                    }
+                }
+            }
+        }
     }
 }
