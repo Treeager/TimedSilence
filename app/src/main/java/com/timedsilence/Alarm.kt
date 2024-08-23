@@ -20,18 +20,22 @@ class AlarmViewModel: ViewModel() {
         log("Class initialized")
     }
 
-    private val _mode = MutableStateFlow(0)
+    private val _mode = MutableStateFlow(2)
     val mode: StateFlow<Int> = _mode.asStateFlow()
 
     fun changeMode(mode: Int) {
         _mode.update { mode }
-        log("reached")
     }
 }
 
 // Schedules an alarm to change the ringer mode at a specific time.
 @SuppressLint("ScheduleExactAlarm")
-fun scheduleRingerModeChange(context: Context, mode: Int, hour: Int, minute: Int) {
+fun scheduleRingerModeChange(context: Context, mode: Int, hour: Int, minute: Int, modeInText: String = when(mode) {
+    0 -> "Normal"
+    1 -> "Vibration"
+    2 -> "Silent"
+    else -> {"this should NEVER show, report to the dev"}
+}) {
     // Set the time for the alarm using a Calendar instance.
     val calendar = Calendar.getInstance().apply {
         set(Calendar.HOUR_OF_DAY, hour)  // Set the hour
