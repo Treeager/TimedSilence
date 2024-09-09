@@ -8,16 +8,73 @@ import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 
-class AlarmViewModel: ViewModel() {
+class AlarmViewModel(
+    colorPrimaryContainer: Color,
+    colorSecondaryContainer: Color,
+    private val scheduledData: ScheduledData
+): ViewModel() {
     init {
         log("Class initialized")
+    }
+    val wasScheduled: LiveData<Boolean> = scheduledData.getIsScheduled().asLiveData()
+
+    private val _fabShape = MutableStateFlow(CircleShape)
+    val fabShape: StateFlow<RoundedCornerShape> = _fabShape.asStateFlow()
+
+
+
+    fun changeFabShape(shape: RoundedCornerShape) {
+        _fabShape.update { shape }
+    }
+
+    private val _fabColor = MutableStateFlow(colorPrimaryContainer)
+    val fabColor: StateFlow<Color> = _fabColor.asStateFlow()
+
+    fun changeFabColor(color: Color) {
+        _fabColor.update { color }
+    }
+
+    private val _fabIcon = MutableStateFlow(Icons.Filled.PlayArrow)
+    val fabIcon: StateFlow<ImageVector> = _fabIcon.asStateFlow()
+
+    fun changeFabIcon(icon: ImageVector) {
+        _fabIcon.update { icon }
+    }
+
+    init {
+        // Observe wasScheduled LiveData and update _fabShape accordingly
+        viewModelScope.launch {
+            wasScheduled.asFlow().collect { isScheduled ->
+                _fabShape.value = if (isScheduled) RoundedCornerShape(16.dp)
+                else CircleShape
+
+                _fabColor.value = if(isScheduled) colorSecondaryContainer
+                else colorPrimaryContainer
+
+                _fabIcon.value = if (isScheduled) Icons.Filled.Clear
+                else Icons.Filled.PlayArrow
+            }
+        }
     }
 
     private val _mode = MutableStateFlow(2)
@@ -30,10 +87,10 @@ class AlarmViewModel: ViewModel() {
 
 // Schedules an alarm to change the ringer mode at a specific time.
 @SuppressLint("ScheduleExactAlarm")
-fun scheduleRingerModeChange(context: Context, mode: Int, hour: Int, minute: Int, modeInText: String = when(mode) {
-    0 -> "Normal"
-    1 -> "Vibration"
-    2 -> "Silent"
+fun scheduleRingerModeChange(context: Context, mode: Int, hour: Int, minute: Int, cancel: Boolean, modeInText: String = when(mode) {
+    2 -> "normal"
+    1 -> "vibration"
+    0 -> "silent"
     else -> {"this should NEVER show, report to the dev"}
 }) {
     // Set the time for the alarm using a Calendar instance.
@@ -60,8 +117,14 @@ fun scheduleRingerModeChange(context: Context, mode: Int, hour: Int, minute: Int
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    // Schedule the alarm to go off at the exact time specified in the calendar.
-    alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+    if (!cancel) {
+        makeToast(context, text = "Schedule $modeInText change")
+        // Schedule the alarm to go off at the exact time specified in the calendar.
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+    } else {
+        alarmManager.cancel(pendingIntent)
+        makeToast(context, text = "Mode change on $hour:$minute canceled")
+    }
 }
 
 fun checkAndRequestExactAlarmPermission(context: Context) {

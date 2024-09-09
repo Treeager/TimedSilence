@@ -1,7 +1,6 @@
 package com.timedsilence
 
 import android.content.Context
-import android.content.res.Resources
 import android.icu.util.Calendar
 import android.os.Bundle
 import android.util.Log
@@ -25,12 +24,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -59,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +71,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.timedsilence.ui.theme.AppTheme
+import kotlinx.coroutines.launch
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,9 +80,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         checkAndRequestExactAlarmPermission(this) // TODO: Dialog about permissions
         checkAndRequestDndPermission(this)
+
         setContent {
             AppTheme {
-                MainComposable(AlarmViewModel())
+                MainComposable(viewModel)
             }
         }
     }
@@ -95,7 +98,11 @@ fun log(msg: String = "Here", tag: String = "ok") {
 @Composable
 fun MainPreview() {
     AppTheme {
-        MainComposable(AlarmViewModel())
+        MainComposable(AlarmViewModel(
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.secondaryContainer,
+            ScheduledData(LocalContext.current)
+        ))
     }
 }
 
@@ -207,6 +214,10 @@ fun SetMode(viewModel: AlarmViewModel) {
 @Composable
 fun MainComposable (viewModel: AlarmViewModel) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val dataStore = remember { ScheduledData(context) }
+
+    val isScheduled by dataStore.getIsScheduled().collectAsState(initial = false)
     val mode by viewModel.mode.collectAsState()
     log("Main called")
 
@@ -224,25 +235,51 @@ fun MainComposable (viewModel: AlarmViewModel) {
         } else {
             "00"
         }
-
-//        if (minutes.length == 1) {
-//            minutes = "0$minutes"
-//        }
-
     }
 
     // Sheet sht
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
 
+
+    val colorPrimaryContainer = MaterialTheme.colorScheme.primaryContainer
+    val colorSecondaryContainer = MaterialTheme.colorScheme.secondaryContainer
+
+//    var fabShape by remember { mutableStateOf( if (!isScheduled) CircleShape else RoundedCornerShape(17.dp) )}
+    val fabShape by viewModel.fabShape.collectAsState()
+    val fabColor by viewModel.fabColor.collectAsState()
+    val fabIcon by viewModel.fabIcon.collectAsState()
+//    val isScheduled by viewModel.scheduled.collectAsState()
+
+
     Scaffold (
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { // TODO: Change button and add toast after click
-                    scheduleRingerModeChange(context, mode, hours.toInt(), minutes.toInt())
+                    if (isScheduled) {
+                        log("canceled")
+                        scheduleRingerModeChange(context, mode, hours.toInt(), minutes.toInt(), true)
+
+                        viewModel.changeFabShape(CircleShape)
+                        viewModel.changeFabColor(colorPrimaryContainer)
+                        viewModel.changeFabIcon(Icons.Filled.PlayArrow)
+                    } else {
+                        viewModel.changeFabShape(RoundedCornerShape(15.dp))
+                        viewModel.changeFabColor(colorSecondaryContainer    )
+                        viewModel.changeFabIcon(Icons.Filled.Clear)
+
+                        log("Scheduled")
+                        scheduleRingerModeChange(context, mode, hours.toInt(), minutes.toInt(), false)
+                    }
+
+                    scope.launch {
+                        val newIsScheduled = !isScheduled
+                        dataStore.changeIsScheduled(newIsScheduled)
+                    }
+//                    viewModel.changeScheduled(!isScheduled)
                 },
-                containerColor = BottomAppBarDefaults.bottomAppBarFabColor,
-                shape = CircleShape,
+                containerColor = fabColor,
+                shape = fabShape,
                 elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                 modifier = Modifier
                     .size(70.dp)
@@ -250,7 +287,7 @@ fun MainComposable (viewModel: AlarmViewModel) {
 
             ) {
                 Icon(
-                    Icons.Filled.PlayArrow,
+                    fabIcon,
                     contentDescription = "Start",
                     modifier = Modifier.size(30.dp)
                 )

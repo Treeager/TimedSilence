@@ -4,15 +4,69 @@ import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.media.AudioManager
+import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.work.impl.utils.ForceStopRunnable.BroadcastReceiver
+import com.timedsilence.ui.theme.primaryContainerDark
+import com.timedsilence.ui.theme.primaryContainerLight
+import com.timedsilence.ui.theme.secondaryContainerDark
+import com.timedsilence.ui.theme.secondaryContainerLight
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 fun setRingerMode(context: Context, mode: Int) {
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     audioManager.ringerMode = mode
 }
+val context = MyApplication.instance
 
+fun isDarkModeEnabled(): Boolean {
+    return (context.resources.configuration.uiMode
+            and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+}
+
+// This code is disgusting and I'm not proud of it
+val colorPrimaryContainer = if (isDarkModeEnabled()) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        dynamicDarkColorScheme(context).primaryContainer
+    } else {
+        primaryContainerDark
+    }
+}
+else {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        dynamicLightColorScheme(context).primaryContainer
+    } else {
+        primaryContainerLight
+    }
+}
+
+val colorSecondaryContainer = if (isDarkModeEnabled()) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        dynamicDarkColorScheme(context).secondaryContainer
+    } else {
+        secondaryContainerDark
+    }
+}
+else {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        dynamicLightColorScheme(context).secondaryContainer
+    } else secondaryContainerLight
+}
+
+val viewModel = AlarmViewModel(
+    colorPrimaryContainer,
+    colorSecondaryContainer,
+    ScheduledData(context)
+)
 
 // RingerModeReceiver listens for the alarm broadcast and changes the ringer mode.
 @SuppressLint("RestrictedApi")
@@ -35,6 +89,15 @@ class RingerModeReceiver : BroadcastReceiver() {
         mode?.let {
             audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL // If this isn't here sometimes doesn't switch  from vibration to silent
             audioManager.ringerMode = it
+        }
+
+        viewModel.changeFabShape(CircleShape)
+        viewModel.changeFabColor(colorPrimaryContainer)
+        viewModel.changeFabIcon(Icons.Filled.PlayArrow)
+        val dataStore = ScheduledData(context)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            dataStore.changeIsScheduled(false)
         }
     }
 }
