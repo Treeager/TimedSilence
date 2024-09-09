@@ -71,6 +71,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.timedsilence.ui.SheetContent
 import com.timedsilence.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 
@@ -381,13 +382,7 @@ fun MainComposable (viewModel: ViewModel) {
                 sheetState = sheetState,
                 modifier = Modifier.height(800.dp)
             ) {
-                Column (
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 80.dp)
-                ) {
-                    Text("Text")
-                }
+                SheetContent()
             }
         }
     }
