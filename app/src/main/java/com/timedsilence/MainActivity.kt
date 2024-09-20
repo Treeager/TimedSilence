@@ -303,7 +303,8 @@ fun MainComposable (viewModel: AlarmViewModel) {
                     IconButton(
                         onClick = {
                             showBottomSheet = true
-                        }
+                        },
+                        modifier = Modifier.offset(y = (-7.5).dp)
                     ) {
                         Icon(
                             Icons.Filled.Settings,
@@ -375,7 +376,8 @@ fun MainComposable (viewModel: AlarmViewModel) {
         if (showBottomSheet) {
             ModalBottomSheet( // TODO: Add some options
                 onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState
+                sheetState = sheetState,
+                modifier = Modifier.height(800.dp)
             ) {
                 Column (
                     modifier = Modifier
