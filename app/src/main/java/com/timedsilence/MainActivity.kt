@@ -1,5 +1,6 @@
 package com.timedsilence
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.icu.util.Calendar
 import android.os.Bundle
@@ -210,6 +211,7 @@ fun SetMode(viewModel: AlarmViewModel) {
     }
 }
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainComposable (viewModel: AlarmViewModel) {
@@ -224,16 +226,16 @@ fun MainComposable (viewModel: AlarmViewModel) {
     // Time things
     var showDialer by remember { mutableStateOf(false) }
     var selectedTime: TimePickerState? by remember { mutableStateOf(null) }
-    var hours by remember { mutableStateOf("00") }
-    var minutes by remember { mutableStateOf("00") }
+//    var hours by remember { mutableStateOf("00") }
+    val hours by dataStore.getHourOfDay().collectAsState(initial = 0)
+    val minutes by dataStore.getMinute().collectAsState(initial = 0)
 
     if (selectedTime != null) {
-        hours = selectedTime?.hour.toString()
-
-        minutes = if (selectedTime?.minute != 0) {
-            selectedTime?.minute.toString()
-        } else {
-            "00"
+        scope.launch {
+            dataStore.changeHourOfDay(selectedTime!!.hour)
+        }
+        scope.launch {
+            dataStore.changeMinute(selectedTime!!.minute)
         }
     }
 
@@ -341,7 +343,7 @@ fun MainComposable (viewModel: AlarmViewModel) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = " ${if (hours.length==1) "0$hours" else hours }:${if (minutes.length==1) "0$minutes" else minutes}",
+                    text = " ${ if (hours <= 9) "0$hours" else hours }:${if (minutes <= 9) "0$minutes" else minutes}",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 50.sp,
                     textAlign = TextAlign.Center,
