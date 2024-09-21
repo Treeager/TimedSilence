@@ -62,7 +62,7 @@ else {
     } else secondaryContainerLight
 }
 
-val viewModel = AlarmViewModel(
+val viewModel = ViewModel(
     colorPrimaryContainer,
     colorSecondaryContainer,
     ScheduledData(context)

@@ -99,7 +99,7 @@ fun log(msg: String = "Here", tag: String = "ok") {
 @Composable
 fun MainPreview() {
     AppTheme {
-        MainComposable(AlarmViewModel(
+        MainComposable(ViewModel(
             MaterialTheme.colorScheme.primaryContainer,
             MaterialTheme.colorScheme.secondaryContainer,
             ScheduledData(LocalContext.current)
@@ -183,7 +183,7 @@ fun makeToast(context: Context, text: String, duration: Int = Toast.LENGTH_SHORT
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetMode(viewModel: AlarmViewModel) {
+fun SetMode(viewModel: ViewModel) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     var mode by remember { mutableIntStateOf(2) }
     val options = listOf("Normal", "Vibrate", "Silent")
@@ -214,7 +214,7 @@ fun SetMode(viewModel: AlarmViewModel) {
 @SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainComposable (viewModel: AlarmViewModel) {
+fun MainComposable (viewModel: ViewModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val dataStore = remember { ScheduledData(context) }
