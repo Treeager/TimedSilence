@@ -43,6 +43,11 @@ fun scheduleRingerModeChange(context: Context, mode: Int, hour: Int, minute: Int
         set(Calendar.HOUR_OF_DAY, hour)  // Set the hour
         set(Calendar.MINUTE, minute)     // Set the minute
         set(Calendar.SECOND, 0)          // Set seconds to zero
+
+        // Check if time is already past, if it is, schedule for the next day
+        if (before(Calendar.getInstance())) {
+            add(Calendar.DAY_OF_YEAR, 1)
+        }
     }
 
     // Get the AlarmManager service.
